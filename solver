@@ -5,12 +5,16 @@ parser.add_argument('--infile')
 parser.add_argument('--outfile')
 args = parser.parse_args()
 
+with open(args.infile, "r") as infile:
+    is_complex = "j" in infile.read()
+
 # fill a matrix with float values from input file
 with open(args.infile, "r") as task:
     var_num, row_num = (int(num) for num in task.readline().split())
     res_matrix = []
     for _ in range(row_num):
-        res_matrix.append([float(num) for num in task.readline().split()])
+        res_matrix.append([complex(num) for num in task.readline().split()] if is_complex
+                          else [float(num) for num in task.readline().split()])
 
 def process_matrix(matrix, vars, rows):
     for row in range(rows):
@@ -44,25 +48,16 @@ def row_mul(row, mul):
     return [elem * mul for elem in row]
 
 def row_sub(row1, row2):
-    """Return a result of subtracting the second row from the first row."""
-    return [elem1 - elem2 for elem1, elem2 in zip(row1, row2)]
-
-def row_add(row1, row2):
     """Return a result of adding the second row to the first row."""
-    return [elem1 + elem2 for elem1, elem2 in zip(row1, row2)]
-
-def reciprocal(row, index):
-    """Returns a negative value for a non-zero row (list) elem at given index.
-       Used to determine the multiplier for elimination steps."""
-    return -row[index] if bool(row[index]) else 0
+    return [elem1 - elem2 for elem1, elem2 in zip(row1, row2)]
 
 def back_solve(matrix):
     """Takes a matrix in row echelon form, applies back solving to it
        and returns a resulting matrix."""
-    for k in reversed(range(len(matrix)-1)):
-        for l in range(len(matrix)-1, k, -1):
-            if reciprocal(matrix[k], l):
-                matrix[k] = row_add(matrix[k], row_mul(matrix[l], reciprocal(matrix[k], l)))
+    for row in range(var_num-1,-1,-1):
+        for rest in range(row-1,-1,-1):
+            sub = matrix[rest][row] / matrix[row][row]
+            matrix[rest] = row_sub(matrix[rest], row_mul(matrix[row], sub))
     return matrix
 
 res_matrix = process_matrix(res_matrix, var_num, row_num)
@@ -71,8 +66,8 @@ with open(args.outfile, "w") as solution:
     if isinstance(res_matrix, str):
         solution.write(res_matrix)
     else:
-        matrix = back_solve(res_matrix)
-
+        res_matrix = back_solve(res_matrix)
         for row in range(var_num):
             solution.write(str(res_matrix[row][-1]) + "\n")
+
 
