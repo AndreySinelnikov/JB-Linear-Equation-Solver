@@ -1,0 +1,60 @@
+import sys
+
+args = sys.argv
+task_file = args[2]
+solution_file = args[4]
+
+with open(task_file, "r") as task:
+    row_num = int(task.readline())
+    res_matrix = []
+    for _ in range(row_num):
+        res_matrix.append([float(num) for num in task.readline().split()])
+
+def row_mul(row, mul):
+    """Return a row (list) multiplied by a number."""
+    return [elem * mul for elem in row]
+
+def row_add(row1, row2):
+    """Return a result of adding the second row to the first row."""
+    return [elem1 + elem2 for elem1, elem2 in zip(row1, row2)]
+
+def row_div(row):
+    """Takes a row, makes its leading entry 1.0 and returns the row."""
+    for elem in row:
+        if elem == 0:
+            continue
+        elif elem == 1.0:
+            return row
+        else:
+            return [num / elem for num in row]
+    return row
+
+def reciprocal(row, index):
+    """Returns a negative value for a non-zero row (list) elem at given index.
+       Used to determine the multiplier for elimination steps."""
+    return -row[index] if bool(row[index]) else 0
+
+def row_echelon_form(matrix):
+    """Takes a matrix and returns it in row echelon form."""
+    for i in range(len(matrix)):
+        matrix[i] = row_div(matrix[i])
+        for j in range(i+1,len(matrix)):
+            if reciprocal(matrix[j], i):
+                matrix[j] = row_add(matrix[j], row_mul(matrix[i], reciprocal(matrix[j], i)))
+    return matrix
+
+def back_solve(matrix):
+    """Takes a matrix in row echelon form, applies back solving to it
+       and returns a resulting matrix."""
+    for k in reversed(range(len(matrix)-1)): 
+        for l in range(len(matrix)-1, k, -1): 
+            if reciprocal(matrix[k], l):
+                matrix[k] = row_add(matrix[k], row_mul(matrix[l], reciprocal(matrix[k], l)))
+    return matrix
+
+res_matrix = back_solve(row_echelon_form(res_matrix))
+
+with open(solution_file, "w") as solution:
+    for row in res_matrix:
+        solution.write(str(row[-1]) + "\n")
+
