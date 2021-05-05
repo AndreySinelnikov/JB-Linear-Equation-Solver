@@ -1,1 +1,1 @@
-# JB-Linear-Equation-Solver
+JetBrains Academy **Linear Equation Solver** project stage solutions.
